@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//Тупой ботинок, просто посчитай расстояние между камерой и игроком и запомни это говно
 public class camera_conrol : MonoBehaviour
 {
     [SerializeField]
