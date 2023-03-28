@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 Base path: 'E:/UnitEdit/2021.3.20f1/Editor/Data', plugins path 'E:/UnitEdit/2021.3.20f1/Editor/Data/PlaybackEngines'
 Cmd: initializeCompiler
 
 Unhandled exception: Protocol error - failed to read magic number (error -2147483644, transferred 0/4)
 
 Quitting shader compiler process
+=======
+>>>>>>> 87258d768e6ab56473b878603efd672d254bd170

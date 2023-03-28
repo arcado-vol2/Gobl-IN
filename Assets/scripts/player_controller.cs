@@ -9,13 +9,15 @@ public class player_controller : MonoBehaviour
     private float speed = 5.0f;
     [SerializeField]
     private float rotation_speed = 720.0f;
-    [SerializeField]
-    private int camera_angle = 45;
+    public Camera following_camera;
+    private float camera_angle = 45;
     private CharacterController character_controller;
     
     void Start()
     {
+        camera_angle = 360 - following_camera.transform.localEulerAngles.y;
         character_controller = GetComponent<CharacterController>();
+        Debug.Log(camera_angle);
     }
     void Update()
     {
