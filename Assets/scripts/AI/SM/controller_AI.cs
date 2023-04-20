@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class controller_AI : MonoBehaviour
 {
@@ -13,6 +14,10 @@ public class controller_AI : MonoBehaviour
     public float patrol_wait_time = 0.3f;
     public float turn_speed = 130;
 
+    public float patrol_detect_time = 2f;
+    public float chase_interest_time = 2f;
+    public float search_time = 2f;
+
     [HideInInspector]
     public state_machine_AI SM;
     [HideInInspector]
@@ -22,6 +27,8 @@ public class controller_AI : MonoBehaviour
     [HideInInspector]
     public chase_state_AI s_chase;
 
+    public field_of_view FOV;
+    public NavMeshAgent AI_agent;
     //Не сказать, что мне нравится такое решение, но другого у меня для вас нет
     private void OnDrawGizmos()
     {
@@ -54,20 +61,30 @@ public class controller_AI : MonoBehaviour
     }
     public IEnumerator FollowPath(Vector3[] waypoints)
     {
-        transform.position = waypoints[0];
-        int target_waypoint_index = 1;
+        
+        int target_waypoint_index = 0;
+        float nearest_distance = float.MaxValue;
+        for (int i = 0; i < waypoints.Length; i++)
+        {
+            float distance = Vector3.Distance(transform.position, waypoints[i]);
+
+            if (distance < nearest_distance)
+            {
+                nearest_distance = distance;
+                target_waypoint_index = i;
+            }
+        }
+
         Vector3 target_waypoint = waypoints[target_waypoint_index];
-        transform.LookAt(target_waypoint);
 
         while (true)
         {
-            transform.position = Vector3.MoveTowards(transform.position, target_waypoint, speed * Time.deltaTime);
-            if (transform.position == target_waypoint)
+            AI_agent.SetDestination(target_waypoint);
+            if (transform.position.x == target_waypoint.x && transform.position.z == target_waypoint.z)
             {
-
                 target_waypoint_index = ++target_waypoint_index % waypoints.Length;
                 target_waypoint = waypoints[target_waypoint_index];
-                yield return new WaitForSeconds(0.3f);
+                yield return new WaitForSeconds(patrol_wait_time);
                 yield return StartCoroutine(TurnToFace(target_waypoint));
             }
             yield return null;
@@ -80,10 +97,20 @@ public class controller_AI : MonoBehaviour
 
         while (Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, look_angle)) >= 0.08f)
         {
+
             float angle = Mathf.MoveTowardsAngle(transform.eulerAngles.y, look_angle, turn_speed * Time.deltaTime);
             transform.eulerAngles = Vector3.up * angle;
             yield return null;
         }
+    }
+    public IEnumerator Chase_closest_target()
+    {
+        int target_id = get_closest_target_id();
+        while (FOV.visible_targets.Count > 0)
+        {
+            AI_agent.SetDestination(FOV.visible_targets[target_id].position);
+            yield return null;
+        }   
     }
 
     private void SM_initialize()
@@ -94,4 +121,22 @@ public class controller_AI : MonoBehaviour
         s_search = new search_state_AI(this, SM);
         SM.initialize(s_patrol);
     }
+
+    public int get_closest_target_id()
+    {
+        int target_id = 0;
+        float max_distance = float.MaxValue;
+        for (int i =0; i< FOV.visible_targets.Count; i++)
+        {
+            float distance = Vector3.Distance(transform.position, FOV.visible_targets[i].position);
+            if (distance < max_distance) {
+                max_distance = distance;
+                target_id = i;
+            }
+        }
+        return target_id;
+
+    }
+
+
 }
