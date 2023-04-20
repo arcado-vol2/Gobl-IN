@@ -1,15 +1,26 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
-public class guard : MonoBehaviour
+public class controller_AI : MonoBehaviour
 {
     public Transform path_holder;
-    Transform player;
+    [HideInInspector]
+    public Transform player;
 
     public float speed = 5f;
-    public float wait_time = 0.3f;
+    public float patrol_wait_time = 0.3f;
     public float turn_speed = 130;
+
+    [HideInInspector]
+    public state_machine_AI SM;
+    [HideInInspector]
+    public patrol_state_AI s_patrol;
+    [HideInInspector]
+    public search_state_AI s_search;
+    [HideInInspector]
+    public chase_state_AI s_chase;
 
     //Не сказать, что мне нравится такое решение, но другого у меня для вас нет
     private void OnDrawGizmos()
@@ -17,7 +28,7 @@ public class guard : MonoBehaviour
 
         Vector3 start_point = path_holder.GetChild(0).position;
         Vector3 last_point = start_point;
-        
+
         foreach (Transform point in path_holder)
         {
             Gizmos.DrawSphere(point.position, 0.3f);
@@ -28,15 +39,20 @@ public class guard : MonoBehaviour
     }
     void Start()
     {
-        player = GameObject.FindGameObjectWithTag("Player").transform;
-        Vector3[] waypoints = new Vector3[path_holder.childCount];
-        for (int i = 0; i < waypoints.Length; i++)
-        {
-            waypoints[i] = new Vector3(path_holder.GetChild(i).position.x, transform.position.y, path_holder.GetChild(i).position.z);
-        }
-        StartCoroutine(FollowPath(waypoints));
+        SM_initialize();
     }
-    IEnumerator FollowPath(Vector3[] waypoints)
+    void Update()
+    {
+        SM.current_state.HandleInput();
+        SM.current_state.LogicUpdate();
+        
+    }
+
+    private void FixedUpdate()
+    {
+        SM.current_state.PhysicsUpdate();
+    }
+    public IEnumerator FollowPath(Vector3[] waypoints)
     {
         transform.position = waypoints[0];
         int target_waypoint_index = 1;
@@ -61,12 +77,21 @@ public class guard : MonoBehaviour
     {
         Vector3 direction_to_target = (target - transform.position).normalized;
         float look_angle = 90 - Mathf.Atan2(direction_to_target.z, direction_to_target.x) * Mathf.Rad2Deg;
-        
+
         while (Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, look_angle)) >= 0.08f)
         {
             float angle = Mathf.MoveTowardsAngle(transform.eulerAngles.y, look_angle, turn_speed * Time.deltaTime);
             transform.eulerAngles = Vector3.up * angle;
             yield return null;
         }
+    }
+
+    private void SM_initialize()
+    {
+        SM = new state_machine_AI();
+        s_chase = new chase_state_AI(this, SM);
+        s_patrol = new patrol_state_AI(this, SM);
+        s_search = new search_state_AI(this, SM);
+        SM.initialize(s_patrol);
     }
 }

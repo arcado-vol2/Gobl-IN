@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TextCore.Text;
 
-public abstract class State
+public abstract class State_AI
 {
-    
-    protected contoller character;
-    protected state_machine SM;
 
-    protected State(contoller _character, state_machine _SM)
+    protected controller_AI character;
+    protected state_machine_AI SM;
+
+    protected State_AI(controller_AI _character, state_machine_AI _SM)
     {
         this.character = _character;
         this.SM = _SM;

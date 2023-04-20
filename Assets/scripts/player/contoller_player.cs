@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class contoller : MonoBehaviour
+public class contoller_player : MonoBehaviour
 {
     [HideInInspector]
     public float speed;
@@ -21,13 +21,13 @@ public class contoller : MonoBehaviour
     public float run_rotation_speed = 1000f;
 
     [HideInInspector]
-    public state_machine SM;
+    public state_machine_player SM;
     [HideInInspector]
-    public move_state s_move;
+    public move_state_player s_move;
     [HideInInspector]
-    public run_state s_run;
+    public run_state_player s_run;
     [HideInInspector]
-    public sneak_state s_sneak;
+    public sneak_state_player s_sneak;
 
     void Start()
     {
@@ -40,11 +40,12 @@ public class contoller : MonoBehaviour
     {
         SM.CurrentState.HandleInput();
         SM.CurrentState.LogicUpdate();
+        SM.CurrentState.PhysicsUpdate();
     }
 
     private void FixedUpdate()
     {
-        SM.CurrentState.PhysicsUpdate();
+        
     }
 
     public void Move(float hor_input, float vert_input)
@@ -62,10 +63,10 @@ public class contoller : MonoBehaviour
 
     private void SM_initialize()
     {
-        SM = new state_machine();
-        s_move = new move_state(this, SM);
-        s_sneak = new sneak_state(this, SM);
-        s_run = new run_state(this, SM);
+        SM = new state_machine_player();
+        s_move = new move_state_player(this, SM);
+        s_sneak = new sneak_state_player(this, SM);
+        s_run = new run_state_player(this, SM);
 
         SM.initialize(s_move);
     }

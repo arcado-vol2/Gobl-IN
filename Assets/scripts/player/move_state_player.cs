@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class move_state : State
+public class move_state_player : State_player
 {
     protected float horizontal_input;
     protected float vertical_input;
@@ -11,7 +11,7 @@ public class move_state : State
     private bool crouch;
     private bool run;
 
-    public move_state(contoller _character, state_machine _SM) : base(_character, _SM)
+    public move_state_player(contoller_player _character, state_machine_player _SM) : base(_character, _SM)
     {
 
     }
