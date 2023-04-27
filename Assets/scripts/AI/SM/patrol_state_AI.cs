@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.TextCore.Text;
 
@@ -16,13 +17,9 @@ public class patrol_state_AI : State_AI {
         base.Enter();
         
         character.player = GameObject.FindGameObjectWithTag("Player").transform;
-        Vector3[] waypoints = new Vector3[character.path_holder.childCount];
-        for (int i = 0; i < waypoints.Length; i++)
-        {
-            waypoints[i] = new Vector3(character.path_holder.GetChild(i).position.x, character.transform.position.y, character.path_holder.GetChild(i).position.z);
-        }
-
-        character.StartCoroutine(character.FollowPath(waypoints));
+        Transform[] waypoints = new Transform[character.path_holder.childCount];
+        waypoints = character.path_holder.GetComponentsInChildren<Transform>().Select(t => t.transform).ToArray(); ;
+        character.StartCoroutine(character.FollowPath(waypoints.Skip(1).ToArray()));
 
     }
 

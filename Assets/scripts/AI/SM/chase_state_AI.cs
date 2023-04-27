@@ -13,7 +13,6 @@ public class chase_state_AI : State_AI
     {
         base.Enter();
         character.StartCoroutine(character.Chase_closest_target());
-        Debug.Log("chase enter");
         
     }
     public override void LogicUpdate()
