@@ -15,10 +15,10 @@ public class patrol_state_AI : State_AI {
     public override void Enter()
     {
         base.Enter();
-        
         character.player = GameObject.FindGameObjectWithTag("Player").transform;
         Transform[] waypoints = new Transform[character.path_holder.childCount];
         waypoints = character.path_holder.GetComponentsInChildren<Transform>().Select(t => t.transform).ToArray(); ;
+        character.StopAllCoroutines();
         character.StartCoroutine(character.FollowPath(waypoints.Skip(1).ToArray()));
 
     }
@@ -28,6 +28,10 @@ public class patrol_state_AI : State_AI {
         if (character.FOV.visible_targets.Count > 0)
         {
             character.patrol_detect_time -= Time.deltaTime;
+        }
+        if (character.FOV.visible_devices_targets.Count > 0)
+        {
+            SM.change_state(character.s_defuse);
         }
         if (character.patrol_detect_time < 0)
         {

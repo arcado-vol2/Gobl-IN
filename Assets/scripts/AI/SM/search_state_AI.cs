@@ -10,6 +10,13 @@ public class search_state_AI : State_AI
         start_search_time = character.search_time;
     }
 
+    public override void Enter()
+    {
+        Debug.Log("Search");
+        base.Enter();
+        character.StartCoroutine(character.Search());
+    }
+
     public override void LogicUpdate()
     {
         base.LogicUpdate();
@@ -30,6 +37,7 @@ public class search_state_AI : State_AI
     public override void Exit()
     {
         base.Exit();
+        character.StopAllCoroutines();
         character.search_time = start_search_time;
     }
 }

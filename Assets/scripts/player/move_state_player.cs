@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -28,6 +29,57 @@ public class move_state_player : State_player
         horizontal_input = Input.GetAxis("Horizontal");
         crouch = Input.GetKeyDown(KeyCode.C);
         run = Input.GetKeyDown(KeyCode.V);
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+
+            Item item = character.invertiry_manager.GetSelectedItem(false);
+            if (item != null)
+            {
+                switch (item.type)
+                {
+                    case (ItemType.weapon):
+                        if (item.action_type == ActionType.Range)
+                        {
+                            SM.change_state(character.s_shoot);
+                        }
+                        break;
+                    case (ItemType.detonator):
+                        character.Detonate();
+                        character.invertiry_manager.GetSelectedItem(true);
+                        break;
+                    case (ItemType.bomb):
+                        character.invertiry_manager.GetSelectedItem(true);
+                        character.SpawDevice(character.C4);
+                        break;
+                    case (ItemType.mine):
+                        character.invertiry_manager.GetSelectedItem(true);
+                        character.SpawDevice(character.mine);
+                        break;
+
+                }
+            }
+        }
+        if (Input.GetAxis("Mouse ScrollWheel") > 0)
+        {
+            character.invertiry_manager.NextSlot();
+        }
+        else if (Input.GetAxis("Mouse ScrollWheel") < 0)
+        {
+            character.invertiry_manager.PrevSlot();
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad1))
+        {
+            character.invertiry_manager.ChangeSelectedSlot(0);
+        }
+        else if (Input.GetKeyDown(KeyCode.Keypad2))
+        {
+            character.invertiry_manager.ChangeSelectedSlot(1);
+        }
+        else if (Input.GetKeyDown(KeyCode.Keypad3))
+        {
+            character.invertiry_manager.ChangeSelectedSlot(2);
+        }
     }
     public override void PhysicsUpdate()
     {

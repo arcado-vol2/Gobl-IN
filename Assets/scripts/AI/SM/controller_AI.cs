@@ -6,6 +6,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.TextCore.Text;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
 
 public class controller_AI : MonoBehaviour
@@ -18,8 +19,18 @@ public class controller_AI : MonoBehaviour
     public float turn_speed = 130;
 
     public float patrol_detect_time = 2f;
-    public float chase_interest_time = 2f;
+    public float search_rotate_time = 2f;
     public float search_time = 2f;
+    public float defuse_distance = 2f;
+    public float defuse_time = 2f;
+    public float hear_radius = 100f;
+    [HideInInspector]
+    public int defuse_stenght = 1;
+
+
+    public float attack_range = 2f;
+    [Range(0, 360)]
+    public float attack_angle = 60f;
 
     [HideInInspector]
     public state_machine_AI SM;
@@ -29,9 +40,14 @@ public class controller_AI : MonoBehaviour
     public search_state_AI s_search;
     [HideInInspector]
     public chase_state_AI s_chase;
+    [HideInInspector]
+    public defuse_state_AI s_defuse;
 
     public field_of_view FOV;
     public NavMeshAgent AI_agent;
+
+    [HideInInspector]
+    public Transform target;
     //Не сказать, что мне нравится такое решение, но другого у меня для вас нет
     private void OnDrawGizmos()
     {
@@ -108,9 +124,10 @@ public class controller_AI : MonoBehaviour
         Vector3 target_waypoint = waypoints_fixed_pos[target_waypoint_index];
         float wait_time = waypoints[target_waypoint_index].GetComponent<path_point>().wait_time;
         sbyte index_modificator = 1;
+        AI_agent.SetDestination(target_waypoint);
         while (true)
-        {
-            AI_agent.SetDestination(target_waypoint);
+        {         
+            
             if (transform.position.x == target_waypoint.x && transform.position.z == target_waypoint.z)
             {
                 wait_time = waypoints[target_waypoint_index].GetComponent<path_point>().wait_time;
@@ -118,21 +135,32 @@ public class controller_AI : MonoBehaviour
                 {
                         index_modificator *= -1;
                 }
-                if (index_modificator == -1 && target_waypoint_index == 0)
-                {
-                    target_waypoint_index = waypoints.Length;
-                }
                 if (waypoints[target_waypoint_index].GetComponent<path_point>().get_current() == path_point.point_type.Wait)
                 {
                     yield return StartCoroutine(TurnToFace(transform.position + waypoints[target_waypoint_index].GetComponent<path_point>().get_look_direction()));
                 }
+                if (index_modificator == -1 && target_waypoint_index <= 0)
+                {
+                    target_waypoint_index = waypoints.Length;
+                }
                 target_waypoint_index = Mathf.Abs(index_modificator + target_waypoint_index) % waypoints.Length;
                 target_waypoint = waypoints_fixed_pos[target_waypoint_index];
+                AI_agent.SetDestination(target_waypoint);
                 yield return new WaitForSeconds(wait_time);
                 yield return StartCoroutine(TurnToFace(target_waypoint));
             }
             yield return null;
         }
+    }
+
+    public IEnumerator GoToPoint(Vector3 target)
+    {
+        AI_agent.SetDestination(target);
+        while (transform.position.x != target.x && transform.position.z != target.z)
+        {
+            yield return null;
+        }
+        
     }
     IEnumerator TurnToFace(Vector3 target)
     {
@@ -147,14 +175,60 @@ public class controller_AI : MonoBehaviour
             yield return null;
         }
     }
+    IEnumerator TurnToFace(float look_angle)
+    {
+        float angle = 0;
+        while (Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, look_angle)) >= 0.08f)
+        {
+            angle = Mathf.MoveTowardsAngle(transform.eulerAngles.y, look_angle, turn_speed * Time.deltaTime);
+            transform.eulerAngles = Vector3.up * angle;
+            yield return null;
+        }
+    }
+
+    public IEnumerator Search(Vector3 search_point = new Vector3(), bool crutch = false)
+    {
+        if (!crutch) {
+            search_point = target.position;
+        }
+        yield return StartCoroutine(GoToPoint(search_point));
+        while (search_time > 0)
+        {
+            yield return StartCoroutine(TurnToFace(0));
+            yield return new WaitForSeconds(search_rotate_time);
+            yield return StartCoroutine(TurnToFace(120));
+            yield return new WaitForSeconds(search_rotate_time);
+            yield return StartCoroutine(TurnToFace(280));
+            yield return new WaitForSeconds(search_rotate_time);
+        }
+    }
     public IEnumerator Chase_closest_target()
     {
         int target_id = get_closest_target_id();
         while (FOV.visible_targets.Count > 0)
         {
+            if (FOV.visible_targets[target_id] == null)
+            {
+                yield break;
+            }
             AI_agent.SetDestination(FOV.visible_targets[target_id].position);
             yield return null;
         }   
+    }
+
+    public IEnumerator GoToClosetDevise()
+    {
+        if (FOV.visible_devices_targets.Count <= 0){
+            yield break;
+        }
+        AI_agent.stoppingDistance = defuse_distance;
+        int target_id = get_closest_target_id(FOV.visible_devices_targets);
+        AI_agent.SetDestination(FOV.visible_devices_targets[target_id].position);
+        while (FOV.visible_devices_targets.Count > 0)
+        {
+            yield return StartCoroutine(Defuse_all());
+        }
+        AI_agent.stoppingDistance = 0;
     }
 
     private void SM_initialize()
@@ -163,16 +237,25 @@ public class controller_AI : MonoBehaviour
         s_chase = new chase_state_AI(this, SM);
         s_patrol = new patrol_state_AI(this, SM);
         s_search = new search_state_AI(this, SM);
+        s_defuse = new defuse_state_AI(this, SM);
         SM.initialize(s_patrol);
     }
 
-    public int get_closest_target_id()
+    public int get_closest_target_id(List<Transform> targets = null)
     {
+        if(targets == null)
+        {
+            targets = FOV.visible_targets;
+        }
         int target_id = 0;
         float max_distance = float.MaxValue;
-        for (int i =0; i< FOV.visible_targets.Count; i++)
+        for (int i =0; i< targets.Count; i++)
         {
-            float distance = Vector3.Distance(transform.position, FOV.visible_targets[i].position);
+            if (targets[i] == null)
+            {
+                continue;
+            }
+            float distance = Vector3.Distance(transform.position, targets[i].position);
             if (distance < max_distance) {
                 max_distance = distance;
                 target_id = i;
@@ -181,6 +264,43 @@ public class controller_AI : MonoBehaviour
         return target_id;
 
     }
+    public void Attack()
+    {
+        Collider[] targets_in_attack_range = Physics.OverlapSphere(transform.position, attack_range, FOV.target_mask);
+        for (int i = 0; i < targets_in_attack_range.Length; i++)
+        {
+            Transform target = targets_in_attack_range[i].transform;
+            Vector3 direction_to_target = (target.position - transform.position).normalized;
+            if (Vector3.Angle(transform.forward, direction_to_target) < attack_angle / 2)
+            {
+                unit_base target_unite_base = targets_in_attack_range[i].GetComponent<unit_base>();
+                if (target_unite_base != null)
+                {
+                    target_unite_base.GetDamage(999);
+                }
+            }
+        }
+    }
 
+    public IEnumerator Defuse_all()
+    {
+        Collider[] devices_in_range = Physics.OverlapSphere(transform.position, defuse_distance, FOV.device_target_mask);
+        for (int i = 0; i < devices_in_range.Length; i++)
+        {
+            device_logic device = devices_in_range[i].GetComponent<device_logic>();
+            yield return StartCoroutine(Defuse(device));
+            yield return null;
+        }
+    }
+    
+    public IEnumerator Defuse(device_logic device)
+    {
+        float wait_time = defuse_time / defuse_stenght;
+        while (device != null)
+        {
+            device.LoseDurability(defuse_stenght);
+            yield return new WaitForSeconds(wait_time);
+        }
+    }
 
 }

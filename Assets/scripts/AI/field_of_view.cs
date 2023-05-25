@@ -10,10 +10,14 @@ public class field_of_view : MonoBehaviour
     public float view_angle;
 
     public LayerMask target_mask;
+    public LayerMask device_target_mask;
     public LayerMask wall_mask;
 
     [HideInInspector]
     public List<Transform> visible_targets = new List<Transform>();
+
+    [HideInInspector]
+    public List<Transform> visible_devices_targets = new List<Transform>();
 
     public float bias;
     public int edge_resolve_iterations;
@@ -30,6 +34,7 @@ public class field_of_view : MonoBehaviour
         view_mesh_filter.mesh = view_mesh;
 
         StartCoroutine(FindTargetsWithDelay(.2f));
+        StartCoroutine(FindDevicesWithDelay(.2f));
     }
     private void Update()
     {
@@ -40,28 +45,42 @@ public class field_of_view : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(delay);
-            FindVisilbleTargets();
+            FindVisilbleTargets(target_mask, ref visible_targets);
         }
     }
-    void FindVisilbleTargets()
+
+    IEnumerator FindDevicesWithDelay(float delay)
     {
-        visible_targets.Clear();
-        Collider[] targets_in_view_radius = Physics.OverlapSphere(transform.position, view_radius, target_mask);
+        while (true)
+        {
+            yield return new WaitForSeconds(delay);
+            FindVisilbleTargets(device_target_mask, ref visible_devices_targets);
+        }
+    }
+
+    void FindVisilbleTargets(LayerMask search_mask, ref List<Transform> out_list)
+    {
+        out_list.Clear();
+        Collider[] targets_in_view_radius = Physics.OverlapSphere(transform.position, view_radius, search_mask);
+
         for ( int i=0; i< targets_in_view_radius.Length; i++)
         {
             Transform target = targets_in_view_radius[i].transform;
             Vector3 direction_to_target = (target.position - transform.position).normalized;
             if (Vector3.Angle(transform.forward, direction_to_target) < view_angle/2)
             {
+                
                 float disance_to_target = Vector3.Distance(transform.position, target.position);
                 if (!Physics.Raycast(transform.position, direction_to_target, disance_to_target, wall_mask))
                 {
-                    visible_targets.Add(target);
+                    out_list.Add(target);
                 }
 
             }
         }
     }
+
+
     void DrawFOW()
     {
         int steps_count = Mathf.RoundToInt( view_angle * bias);
