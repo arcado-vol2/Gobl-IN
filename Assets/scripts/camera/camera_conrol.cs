@@ -5,8 +5,7 @@ using UnityEngine;
 //Тупой ботинок, просто посчитай расстояние между камерой и игроком и запомни это говно
 public class camera_conrol : MonoBehaviour
 {
-    [SerializeField]
-    private Transform follow_target;
+    public Transform follow_target;
     [SerializeField]
     private float follow_speed = 2;
     [SerializeField]

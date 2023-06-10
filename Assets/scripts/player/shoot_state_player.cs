@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class shoot_state_player : State_player
 {
-    public shoot_state_player(contoller_player _character, state_machine_player _SM) : base(_character, _SM)
+    public shoot_state_player(contoller_player _character, state_machine_player _SM, character_auto_controller _CAC) : base(_character, _SM, _CAC)
     {
     }
     public override void Enter()
@@ -24,6 +24,7 @@ public class shoot_state_player : State_player
             SM.change_state(character.s_move);
         }
         else if (Input.GetKeyDown(KeyCode.Mouse1)) {
+            character.ResetAim();
             SM.change_state(character.s_move);
 
         }

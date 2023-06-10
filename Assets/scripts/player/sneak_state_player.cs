@@ -5,7 +5,7 @@ using UnityEngine;
 public class sneak_state_player : move_state_player
 {
     bool crouch_held = Input.GetKey(KeyCode.C);
-    public sneak_state_player(contoller_player _character, state_machine_player _SM) : base(_character, _SM)
+    public sneak_state_player(contoller_player _character, state_machine_player _SM, character_auto_controller _CAC) : base(_character, _SM, _CAC)
     {
 
     }

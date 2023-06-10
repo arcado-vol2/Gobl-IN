@@ -5,7 +5,7 @@ using UnityEngine;
 public class run_state_player : move_state_player
 {
     bool run_held = Input.GetKey(KeyCode.V);
-    public run_state_player(contoller_player _character, state_machine_player _SM) : base(_character, _SM)
+    public run_state_player(contoller_player _character, state_machine_player _SM, character_auto_controller _CAC) : base(_character, _SM, _CAC)
     {
 
     }

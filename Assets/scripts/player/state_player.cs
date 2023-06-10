@@ -8,11 +8,13 @@ public abstract class State_player
     
     protected contoller_player character;
     protected state_machine_player SM;
+    protected character_auto_controller CAC;
 
-    protected State_player(contoller_player _character, state_machine_player _SM)
+    protected State_player(contoller_player _character, state_machine_player _SM, character_auto_controller _CAC)
     {
         this.character = _character;
         this.SM = _SM;
+        this.CAC = _CAC;
     }
     public virtual void Enter()
     {

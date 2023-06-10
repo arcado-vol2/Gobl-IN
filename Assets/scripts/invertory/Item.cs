@@ -14,7 +14,7 @@ public class Item : ScriptableObject
     [Header("Only UI")]
     public bool stackable = true;
     
-    [Header("Only both")]
+    [Header("Both")]
     public Sprite image;
 }
 
@@ -24,6 +24,7 @@ public enum ItemType
     mine,
     detonator,
     weapon,
+    key,
 }
 
 public enum ActionType

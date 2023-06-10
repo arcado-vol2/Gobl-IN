@@ -12,7 +12,7 @@ public class move_state_player : State_player
     private bool crouch;
     private bool run;
 
-    public move_state_player(contoller_player _character, state_machine_player _SM) : base(_character, _SM)
+    public move_state_player(contoller_player _character, state_machine_player _SM, character_auto_controller _CAC) : base(_character, _SM, _CAC)
     {
 
     }
@@ -32,7 +32,6 @@ public class move_state_player : State_player
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-
             Item item = character.invertiry_manager.GetSelectedItem(false);
             if (item != null)
             {
@@ -47,14 +46,24 @@ public class move_state_player : State_player
                     case (ItemType.detonator):
                         character.Detonate();
                         character.invertiry_manager.GetSelectedItem(true);
+                        CAC.SaveAction(DemoActionType.blow_up, false);
                         break;
                     case (ItemType.bomb):
                         character.invertiry_manager.GetSelectedItem(true);
                         character.SpawDevice(character.C4);
+                        CAC.SaveAction(DemoActionType.plant, false, 0, 0, DemoDeviceType.C4);
                         break;
                     case (ItemType.mine):
                         character.invertiry_manager.GetSelectedItem(true);
                         character.SpawDevice(character.mine);
+                        CAC.SaveAction(DemoActionType.plant, false, 0,0, DemoDeviceType.mine);
+                        break;
+                    case (ItemType.key):
+                        if (character.use_key())
+                        {
+                            character.invertiry_manager.GetSelectedItem(true);
+                            CAC.SaveAction(DemoActionType.use, false);
+                        }
                         break;
 
                 }

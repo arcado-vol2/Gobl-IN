@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
+using System;
 
 public class contoller_player : MonoBehaviour
 {
@@ -24,15 +26,18 @@ public class contoller_player : MonoBehaviour
     public float sneak_rotation_speed = 500f;
     public float run_speed = 8f;
     public float run_rotation_speed = 1000f;
-
+    public GameObject body_obj;
 
     [Header("Prefabs")]
     public GameObject mine;
     public GameObject C4;
     public InvertiryManager invertiry_manager;
 
+    //State machine
     [HideInInspector]
     public state_machine_player SM;
+    [HideInInspector]
+    public character_auto_controller CAC;
     [HideInInspector]
     public move_state_player s_move;
     [HideInInspector]
@@ -52,18 +57,17 @@ public class contoller_player : MonoBehaviour
     [SerializeField] private float laser_length;
 
     private Camera main_camera;
+    private wall_key_button terminal;
+
 
     void Start()
     {
         ToggleAim();
         main_camera = Camera.main;
+        CAC = GetComponent<character_auto_controller>();
         SM_initialize();
         camera_angle = 360 - following_camera.transform.localEulerAngles.y;
         character_controller = GetComponent<CharacterController>();
-        if (!user_control)
-        {
-            StartCoroutine(DemoAction());
-        }
 
     }
     void Update()
@@ -76,6 +80,7 @@ public class contoller_player : MonoBehaviour
         }
         
     }
+
 
     public void Move(float hor_input, float vert_input)
     {
@@ -94,10 +99,10 @@ public class contoller_player : MonoBehaviour
     private void SM_initialize()
     {
         SM = new state_machine_player();
-        s_move = new move_state_player(this, SM);
-        s_sneak = new sneak_state_player(this, SM);
-        s_run = new run_state_player(this, SM);
-        s_shoot = new shoot_state_player(this, SM);
+        s_move = new move_state_player(this, SM, CAC);
+        s_sneak = new sneak_state_player(this, SM, CAC);
+        s_run = new run_state_player(this, SM, CAC);
+        s_shoot = new shoot_state_player(this, SM, CAC);
 
         SM.initialize(s_move);
     }
@@ -108,19 +113,23 @@ public class contoller_player : MonoBehaviour
             var (success, position) = GetMousePosition();
             if (success)
             {
-                var direction = position - transform.position;
+                var direction = position - body_obj.transform.position;
                 direction.y = 0;
-                transform.forward = direction;
+                body_obj.transform.right = -direction;
+                //ody_obj.transform.Rotate(new Vector3(0, 1, 0), 90);
             }
         }
         else
         {
-            transform.forward = new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle));   
+            body_obj.transform.forward = new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle));    
 
         }
         
     }
-
+    public void ResetAim()
+    {
+        body_obj.transform.forward = transform.right;
+    }
     private (bool success, Vector3 position) GetMousePosition()
     {
         var ray = main_camera.ScreenPointToRay(Input.mousePosition);
@@ -144,16 +153,16 @@ public class contoller_player : MonoBehaviour
 
         Vector3 line_end;
 
-        if (Physics.Raycast(transform.position, transform.forward, out var hitinfo, laser_length, laser_mask))
+        if (Physics.Raycast(body_obj.transform.position, -body_obj.transform.right, out var hitinfo, laser_length, laser_mask))
         {
             line_end = hitinfo.point;
         }
         else
         {
-            line_end = transform.position + transform.forward * laser_length;
+            line_end = body_obj.transform.position + (-body_obj.transform.right) * laser_length;
         }
         line_end = new Vector3(line_end.x, laser_renderer.GetPosition(0).y, line_end.z);
-        laser_renderer.SetPosition(0, new Vector3(transform.position.x, laser_renderer.GetPosition(0).y, transform.position.z));
+        laser_renderer.SetPosition(0, new Vector3(body_obj.transform.position.x, laser_renderer.GetPosition(0).y, body_obj.transform.position.z));
         laser_renderer.SetPosition(1, line_end);
     }
 
@@ -166,7 +175,7 @@ public class contoller_player : MonoBehaviour
     public void Shoot()
     {
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, transform.forward, out hit, laser_length))
+        if (Physics.Raycast(body_obj.transform.position, -body_obj.transform.right, out hit, laser_length))
         {
             unit_base target = hit.transform.GetComponent<unit_base>();
             if (target != null)
@@ -174,7 +183,7 @@ public class contoller_player : MonoBehaviour
                 target.GetDamage(999);
             }
         }
-
+        ResetAim();
     }
 
     public void Detonate()
@@ -191,72 +200,33 @@ public class contoller_player : MonoBehaviour
         Instantiate(device_prefab, transform.position, transform.rotation);
     }
 
-    public action[] action_list;
-    
-    
-
-    public IEnumerator DemoAction()
+    private void OnTriggerEnter(Collider other)
     {
-        float current_time = 0;
-        int current_action_index = 0;
-        bool has_done = false;
-        while (current_action_index < action_list.Length)
+        wall_key_button tmp = other.GetComponent<wall_key_button>();
+        if (tmp != null)
         {
-            current_time += Time.deltaTime;
-            if (action_list[current_action_index].long_action)
-            {
-                switch (action_list[current_action_index].type)
-                {
-                    case DemoActionType.move:
-                        Move(action_list[current_action_index].hor_input, action_list[current_action_index].vert_input);
-                        Debug.Log("auto");
-                        break;
-                    case DemoActionType.plant:
-                        switch (action_list[current_action_index].device)
-                        {
-                            case DemoDeviceType.mine:
-                                SpawDevice(mine);
-                                break;
-                            case DemoDeviceType.C4:
-                                SpawDevice(C4);
-                                break;
-                        }
-                        break;
-                }
-            }
-            else if (!has_done)
-            {
-                has_done = true;
-                switch (action_list[current_action_index].type)
-                {
-                    case DemoActionType.plant:
-                        switch (action_list[current_action_index].device)
-                        {
-                            case DemoDeviceType.mine:
-                                SpawDevice(mine);
-                                break;
-                            case DemoDeviceType.C4:
-                                SpawDevice(C4);
-                                break;
-                        }
-                        break;
-                    case DemoActionType.blow_up:
-                        Detonate();
-                        break;
-                    case DemoActionType.attack:
-                        Aim(false, action_list[current_action_index].angle);
-                        break;
-                }
-            }
-            if (current_time >= action_list[current_action_index].time)
-            {
-                
-                current_action_index++;
-                has_done = false;
-            }
-            yield return null;
+            terminal = tmp;
         }
-        
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.GetComponent<wall_key_button>() != null)
+        {
+            terminal = null;
+        }
+    }
+
+
+    public bool use_key()
+    {
+
+        if (terminal != null)
+        {
+            terminal.use_key();
+            return true;
+        }
+        return false;
     }
 
 }

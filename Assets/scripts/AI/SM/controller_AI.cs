@@ -13,7 +13,7 @@ public class controller_AI : MonoBehaviour
 {
     public Transform path_holder;
     [HideInInspector]
-    public Transform player;
+    //public Transform player;
 
     public float speed = 5f;
     public float turn_speed = 130;
@@ -48,6 +48,19 @@ public class controller_AI : MonoBehaviour
 
     [HideInInspector]
     public Transform target;
+
+    [SerializeField]
+    Sprite patrol_image;
+    [SerializeField]
+    Sprite chase_image;
+    [SerializeField]
+    Sprite search_image;
+    [SerializeField]
+    Sprite defuse_image;
+    [SerializeField]
+    SpriteRenderer state_image;
+    
+
     //Не сказать, что мне нравится такое решение, но другого у меня для вас нет
     private void OnDrawGizmos()
     {
@@ -222,11 +235,19 @@ public class controller_AI : MonoBehaviour
             yield break;
         }
         AI_agent.stoppingDistance = defuse_distance;
-        int target_id = get_closest_target_id(FOV.visible_devices_targets);
-        AI_agent.SetDestination(FOV.visible_devices_targets[target_id].position);
         while (FOV.visible_devices_targets.Count > 0)
         {
-            yield return StartCoroutine(Defuse_all());
+            int target_id = get_closest_target_id(FOV.visible_devices_targets);
+            AI_agent.SetDestination(FOV.visible_devices_targets[target_id].position);
+            
+            Collider[] devices_in_range = Physics.OverlapSphere(transform.position, defuse_distance, FOV.device_target_mask);
+            for (int i = 0; i < devices_in_range.Length; i++)
+            {
+                device_logic device = devices_in_range[i].GetComponent<device_logic>();
+                yield return StartCoroutine(Defuse(device));
+                yield return null;
+            }
+            yield return null;
         }
         AI_agent.stoppingDistance = 0;
     }
@@ -238,7 +259,7 @@ public class controller_AI : MonoBehaviour
         s_patrol = new patrol_state_AI(this, SM);
         s_search = new search_state_AI(this, SM);
         s_defuse = new defuse_state_AI(this, SM);
-        SM.initialize(s_patrol);
+        SM.initialize(s_patrol, this);
     }
 
     public int get_closest_target_id(List<Transform> targets = null)
@@ -281,17 +302,6 @@ public class controller_AI : MonoBehaviour
             }
         }
     }
-
-    public IEnumerator Defuse_all()
-    {
-        Collider[] devices_in_range = Physics.OverlapSphere(transform.position, defuse_distance, FOV.device_target_mask);
-        for (int i = 0; i < devices_in_range.Length; i++)
-        {
-            device_logic device = devices_in_range[i].GetComponent<device_logic>();
-            yield return StartCoroutine(Defuse(device));
-            yield return null;
-        }
-    }
     
     public IEnumerator Defuse(device_logic device)
     {
@@ -302,5 +312,27 @@ public class controller_AI : MonoBehaviour
             yield return new WaitForSeconds(wait_time);
         }
     }
+
+
+    public void RefreshState()
+    {
+        if (SM.current_state == s_patrol)
+        {
+            state_image.sprite = patrol_image;
+        }
+        else if (SM.current_state == s_search)
+        {
+            state_image.sprite = search_image;
+        }
+        else if (SM.current_state == s_chase)
+        {
+            state_image.sprite = chase_image;
+        }
+        else if (SM.current_state == s_defuse)
+        {
+            state_image.sprite = defuse_image;
+        }
+    }
+
 
 }

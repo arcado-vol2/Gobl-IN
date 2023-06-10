@@ -30,7 +30,7 @@ public class chase_state_AI : State_AI
             if (Vector3.Distance(character.transform.position, character.target.transform.position) < character.attack_range)
             {
                 character.Attack();
-                SM.change_state(character.s_patrol);
+                SM.change_state(character.s_patrol); 
             }
         }
 

@@ -35,6 +35,23 @@ public class InvertiryManager : MonoBehaviour
         selected_slot = new_value;
     }
     
+    public void InitInvertiry(List<Item> items)
+    {
+        for (int i=0; i<invertory_slots.Length; i++)
+        {
+            InvertoryItem t = invertory_slots[i].GetComponentInChildren<InvertoryItem>();
+            if (t != null)
+            {
+                Destroy(t.gameObject);
+
+            }
+        }
+        for (int i =0; i < items.Count; i++)
+        {
+            AddItem(items[i]);
+        }
+    }
+
     public bool AddItem(Item item)
     {
         for (int i = 0; i < invertory_slots.Length; i++)
