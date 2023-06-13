@@ -28,11 +28,19 @@ public class unit_manager : MonoBehaviour
     {
         if (replay_manager.unit_id < units.Count)
         {
-            replay_manager.unit_id ++;
+            replay_manager.unit_id++;
             RestartLevel();
         }
     }
 
+    public void DisableControll()
+    {
+        foreach (GameObject uni in units)
+        {
+            if (uni != null)
+                uni.GetComponent<contoller_player>().user_control = false;
+        }
+    }
     public void RestartLevel()
     {
         foreach (GameObject unit in units)

@@ -1,13 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.IO;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.TextCore.Text;
 using UnityEngine.UI;
-using UnityEngine.UIElements;
 
 public class controller_AI : MonoBehaviour
 {
@@ -58,10 +53,12 @@ public class controller_AI : MonoBehaviour
     [SerializeField]
     Sprite defuse_image;
     [SerializeField]
-    SpriteRenderer state_image;
-    
+    Image state_image;
 
-    //Не сказать, что мне нравится такое решение, но другого у меня для вас нет
+    [SerializeField]
+    level_manager lvl_manager;
+
+    //пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ
     private void OnDrawGizmos()
     {
         Transform start_point = path_holder.GetChild(0);
@@ -93,7 +90,7 @@ public class controller_AI : MonoBehaviour
             }
             Gizmos.color = point_color;
             Gizmos.DrawSphere(point.position, 0.3f);
-            
+
             last_point = point;
             last_point_type = point.GetComponent<path_point>().get_current();
         }
@@ -102,12 +99,13 @@ public class controller_AI : MonoBehaviour
     void Start()
     {
         SM_initialize();
+        RefreshState();
     }
     void Update()
     {
         SM.current_state.HandleInput();
         SM.current_state.LogicUpdate();
-        
+
     }
 
     private void FixedUpdate()
@@ -139,14 +137,14 @@ public class controller_AI : MonoBehaviour
         sbyte index_modificator = 1;
         AI_agent.SetDestination(target_waypoint);
         while (true)
-        {         
-            
-            if (transform.position.x == target_waypoint.x && transform.position.z == target_waypoint.z)
+        {
+
+            if (Mathf.Abs(transform.position.x - target_waypoint.x) <= 0.3 && Mathf.Abs(transform.position.z - target_waypoint.z) <= 0.3)
             {
                 wait_time = waypoints[target_waypoint_index].GetComponent<path_point>().wait_time;
                 if (waypoints[target_waypoint_index].GetComponent<path_point>().get_current() == path_point.point_type.Reverse)
                 {
-                        index_modificator *= -1;
+                    index_modificator *= -1;
                 }
                 if (waypoints[target_waypoint_index].GetComponent<path_point>().get_current() == path_point.point_type.Wait)
                 {
@@ -162,6 +160,7 @@ public class controller_AI : MonoBehaviour
                 yield return new WaitForSeconds(wait_time);
                 yield return StartCoroutine(TurnToFace(target_waypoint));
             }
+
             yield return null;
         }
     }
@@ -173,7 +172,7 @@ public class controller_AI : MonoBehaviour
         {
             yield return null;
         }
-        
+
     }
     IEnumerator TurnToFace(Vector3 target)
     {
@@ -201,7 +200,8 @@ public class controller_AI : MonoBehaviour
 
     public IEnumerator Search(Vector3 search_point = new Vector3(), bool crutch = false)
     {
-        if (!crutch) {
+        if (!crutch)
+        {
             search_point = target.position;
         }
         yield return StartCoroutine(GoToPoint(search_point));
@@ -226,12 +226,13 @@ public class controller_AI : MonoBehaviour
             }
             AI_agent.SetDestination(FOV.visible_targets[target_id].position);
             yield return null;
-        }   
+        }
     }
 
     public IEnumerator GoToClosetDevise()
     {
-        if (FOV.visible_devices_targets.Count <= 0){
+        if (FOV.visible_devices_targets.Count <= 0)
+        {
             yield break;
         }
         AI_agent.stoppingDistance = defuse_distance;
@@ -239,7 +240,7 @@ public class controller_AI : MonoBehaviour
         {
             int target_id = get_closest_target_id(FOV.visible_devices_targets);
             AI_agent.SetDestination(FOV.visible_devices_targets[target_id].position);
-            
+
             Collider[] devices_in_range = Physics.OverlapSphere(transform.position, defuse_distance, FOV.device_target_mask);
             for (int i = 0; i < devices_in_range.Length; i++)
             {
@@ -264,20 +265,21 @@ public class controller_AI : MonoBehaviour
 
     public int get_closest_target_id(List<Transform> targets = null)
     {
-        if(targets == null)
+        if (targets == null)
         {
             targets = FOV.visible_targets;
         }
         int target_id = 0;
         float max_distance = float.MaxValue;
-        for (int i =0; i< targets.Count; i++)
+        for (int i = 0; i < targets.Count; i++)
         {
             if (targets[i] == null)
             {
                 continue;
             }
             float distance = Vector3.Distance(transform.position, targets[i].position);
-            if (distance < max_distance) {
+            if (distance < max_distance)
+            {
                 max_distance = distance;
                 target_id = i;
             }
@@ -302,7 +304,7 @@ public class controller_AI : MonoBehaviour
             }
         }
     }
-    
+
     public IEnumerator Defuse(device_logic device)
     {
         float wait_time = defuse_time / defuse_stenght;
@@ -318,20 +320,30 @@ public class controller_AI : MonoBehaviour
     {
         if (SM.current_state == s_patrol)
         {
-            state_image.sprite = patrol_image;
+            state_image.enabled = false;
+            //state_image.sprite = patrol_image;
         }
-        else if (SM.current_state == s_search)
+        else
         {
-            state_image.sprite = search_image;
+            state_image.enabled = true;
+            if (SM.current_state == s_search)
+            {
+                state_image.sprite = search_image;
+            }
+            else if (SM.current_state == s_chase)
+            {
+                state_image.sprite = chase_image;
+            }
+            else if (SM.current_state == s_defuse)
+            {
+                state_image.sprite = defuse_image;
+            }
         }
-        else if (SM.current_state == s_chase)
-        {
-            state_image.sprite = chase_image;
-        }
-        else if (SM.current_state == s_defuse)
-        {
-            state_image.sprite = defuse_image;
-        }
+
+    }
+    public void Die()
+    {
+        lvl_manager.KillEnemy();
     }
 
 

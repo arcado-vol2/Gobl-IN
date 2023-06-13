@@ -1,6 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\player"
   ],
+  "SelectedNode": "\\player\\run_state_player.cs",
   "PreviewInSolutionExplorer": false
 }

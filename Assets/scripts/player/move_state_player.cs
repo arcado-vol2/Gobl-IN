@@ -12,6 +12,7 @@ public class move_state_player : State_player
     private bool crouch;
     private bool run;
 
+
     public move_state_player(contoller_player _character, state_machine_player _SM, character_auto_controller _CAC) : base(_character, _SM, _CAC)
     {
 
@@ -27,9 +28,7 @@ public class move_state_player : State_player
         base.HandleInput();
         vertical_input = Input.GetAxis("Vertical");
         horizontal_input = Input.GetAxis("Horizontal");
-        crouch = Input.GetKeyDown(KeyCode.C);
-        run = Input.GetKeyDown(KeyCode.V);
-
+        character.Move(horizontal_input, vertical_input);
         if (Input.GetKeyDown(KeyCode.E))
         {
             Item item = character.invertiry_manager.GetSelectedItem(false);
@@ -38,6 +37,8 @@ public class move_state_player : State_player
                 switch (item.type)
                 {
                     case (ItemType.weapon):
+
+                        //CAC.SaveAction(DemoActionType.move, true);
                         if (item.action_type == ActionType.Range)
                         {
                             SM.change_state(character.s_shoot);
@@ -56,7 +57,7 @@ public class move_state_player : State_player
                     case (ItemType.mine):
                         character.invertiry_manager.GetSelectedItem(true);
                         character.SpawDevice(character.mine);
-                        CAC.SaveAction(DemoActionType.plant, false, 0,0, DemoDeviceType.mine);
+                        CAC.SaveAction(DemoActionType.plant, false, 0, 0, DemoDeviceType.mine);
                         break;
                     case (ItemType.key):
                         if (character.use_key())
@@ -89,11 +90,12 @@ public class move_state_player : State_player
         {
             character.invertiry_manager.ChangeSelectedSlot(2);
         }
+
     }
     public override void PhysicsUpdate()
     {
         base.PhysicsUpdate();
-        character.Move(horizontal_input, vertical_input);
+
     }
 
     public override void LogicUpdate()

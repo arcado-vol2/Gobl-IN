@@ -2,59 +2,28 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-//Тупой ботинок, просто посчитай расстояние между камерой и игроком и запомни это говно
 public class camera_conrol : MonoBehaviour
 {
     public Transform follow_target;
+    private Vector3 offset;
+    private Vector3 current_velocity = Vector3.zero;
     [SerializeField]
-    private float follow_speed = 2;
-    [SerializeField]
-    private float x_follow_distance = 5f;
-    [SerializeField]
-    private float z_follow_distance = 5f;
-    [SerializeField]
-    private float treshhold = 0.02f;
+    private float smooth_time = 0;
 
-    void Update()
+    void Awake()
     {
-        if (follow_target == null)
-        {
-            return;
-        }
-        float x_current_distance = transform.position.x - follow_target.position.x;
-        float z_current_distance = transform.position.z - follow_target.position.z;
-
-        Vector3 new_position = transform.position;
-
-        float x_treshhold = Mathf.Abs(x_current_distance - x_follow_distance);
-        float z_treshhold = Mathf.Abs(z_current_distance - z_follow_distance);
-
-        if (x_treshhold > treshhold)
-        {
-            if (x_current_distance > x_follow_distance)
-            {
-                new_position.x -= transform.right.x;
-            }
-            else if (x_current_distance < x_follow_distance)
-            {
-                new_position.x += transform.right.x;
-            }
-        }
-
-        if(z_treshhold > treshhold)
-        {
-            if (z_current_distance > z_follow_distance)
-            {
-                new_position.z -= transform.forward.z;
-            }
-            else
-            {
-                new_position.z += transform.forward.z;
-            }
-        }
-
-       transform.position = Vector3.Lerp(transform.position, new_position, follow_speed * Time.deltaTime);
+        offset = transform.position - follow_target.position;
+        offset.x = 0;
     }
 
-  
+    void LateUpdate()
+    {
+        if (follow_target != null)
+        {
+            Vector3 target_position = follow_target.position + offset;
+            transform.position = Vector3.SmoothDamp(transform.position, target_position, ref current_velocity, smooth_time);
+        }
+    }
+
+
 }

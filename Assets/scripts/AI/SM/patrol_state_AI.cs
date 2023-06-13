@@ -4,7 +4,8 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.TextCore.Text;
 
-public class patrol_state_AI : State_AI {
+public class patrol_state_AI : State_AI
+{
 
     private float detected_time_start;
     public patrol_state_AI(controller_AI _character, state_machine_AI _SM) : base(_character, _SM)
@@ -19,7 +20,6 @@ public class patrol_state_AI : State_AI {
         Transform[] waypoints = new Transform[character.path_holder.childCount];
         waypoints = character.path_holder.GetComponentsInChildren<Transform>().Select(t => t.transform).ToArray(); ;
         character.StopAllCoroutines();
-        Debug.Log(waypoints.Length);
         character.StartCoroutine(character.FollowPath(waypoints.Skip(1).ToArray()));
 
     }

@@ -78,7 +78,7 @@ public class contoller_player : MonoBehaviour
             SM.CurrentState.LogicUpdate();
             SM.CurrentState.PhysicsUpdate();
         }
-        
+
     }
 
 
@@ -95,7 +95,7 @@ public class contoller_player : MonoBehaviour
         }
     }
 
-    
+
     private void SM_initialize()
     {
         SM = new state_machine_player();
@@ -106,7 +106,7 @@ public class contoller_player : MonoBehaviour
 
         SM.initialize(s_move);
     }
-    public void Aim(bool handle = true, float angle = 0)
+    public Vector3 Aim(bool handle = true, Vector3 angle = default(Vector3))
     {
         if (handle)
         {
@@ -116,15 +116,16 @@ public class contoller_player : MonoBehaviour
                 var direction = position - body_obj.transform.position;
                 direction.y = 0;
                 body_obj.transform.right = -direction;
+                return -direction;
                 //ody_obj.transform.Rotate(new Vector3(0, 1, 0), 90);
             }
         }
         else
         {
-            body_obj.transform.forward = new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle));    
-
+            body_obj.transform.right = angle;
         }
-        
+        return Vector3.zero;
+
     }
     public void ResetAim()
     {

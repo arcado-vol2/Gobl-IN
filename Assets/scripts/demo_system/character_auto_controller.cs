@@ -1,11 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using UnityEditor.ShaderKeywordFilter;
 using UnityEngine;
-using UnityEngine.TextCore.Text;
-using System.IO;
-
 public class character_auto_controller : MonoBehaviour
 {
     public Queue<action> action_queue;
@@ -37,8 +32,9 @@ public class character_auto_controller : MonoBehaviour
 
 
 
-    public void SaveAction(DemoActionType type, bool long_action, float v_in = 0 , float h_in = 0, DemoDeviceType device = DemoDeviceType.none, float angle = 0)
+    public void SaveAction(DemoActionType type, bool long_action, float v_in = 0, float h_in = 0, DemoDeviceType device = DemoDeviceType.none, Vector3 angle = default(Vector3))
     {
+        if (angle == default(Vector3)) angle = Vector3.zero;
         action new_action = new action(type, v_in, h_in, Time.timeSinceLevelLoad, device, angle, long_action);
         action_queue.Enqueue(new_action);
 
@@ -60,24 +56,27 @@ public class character_auto_controller : MonoBehaviour
     }
 
 
-    public action NextAction() {
+    public action NextAction()
+    {
         ShortAction();
-        if (action_queue.Count > 0){
-            return action_queue.Dequeue(); }
+        if (action_queue.Count > 0)
+        {
+            return action_queue.Dequeue();
+        }
         return null;
 
     }
     /*
-     Короче, раз я иду спать то напишу завтрашенму себе здесь полную инф-у
-    Идея такая у нас все действия окромя движения отлично работают при смене действия, следовательено мы спокойно можем
-    из карутина убрать обработку коротких действий
-    в свою очередь там должны проигрываться только передвижение и прицеливание (через лерпы от угла к углу, надо подумать как их записывать)
-    Передвижение обрабатывается через мувы, но надо записывать их инчаче, тобишь надо писать прошлое передвижение когда оно меняется на новое, потому что иначе будет фигня
-    так же надо писать разную обработку дейтвий исходя из их типа
-    тобишь мы должны прекращать двтигаться как только приходит команда на то что игрок решил прекратить движение
-    имею в виду что мы не должны стопаться если приходить команда, например, заложить бомбу
+     пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ-пїЅ
+    пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+    пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
+    пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+    пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ
+    пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 
-    селяви
+    пїЅпїЅпїЅпїЅпїЅпїЅ
 
      */
     IEnumerator PlayReplay()
@@ -103,8 +102,8 @@ public class character_auto_controller : MonoBehaviour
 
     public void Update()
     {
-       
-      
+
+
         if (is_playing)
         {
             if (current_action != null)
@@ -117,13 +116,13 @@ public class character_auto_controller : MonoBehaviour
         }
         else
         {
-            
+
             float vertical_input = Input.GetAxis("Vertical");
             float horizontal_input = Input.GetAxis("Horizontal");
-
-            if ((vertical_input != 0 || horizontal_input != 0) && (vertical_input != last_vertical_input || horizontal_input != last_horizontal_input ) )
+            SaveAction(DemoActionType.move, true, last_vertical_input, last_horizontal_input);
+            if ((vertical_input != 0 || horizontal_input != 0) && (vertical_input != last_vertical_input || horizontal_input != last_horizontal_input))
             {
-                SaveAction(DemoActionType.move, true, last_vertical_input, last_horizontal_input);
+
             }
 
             last_vertical_input = vertical_input;
@@ -156,6 +155,7 @@ public class character_auto_controller : MonoBehaviour
             case DemoActionType.shoot:
                 player.Aim(false, current_action.angle);
                 player.Shoot();
+                player.Shoot();
                 break;
             case DemoActionType.use:
                 player.use_key();
@@ -163,4 +163,3 @@ public class character_auto_controller : MonoBehaviour
         }
     }
 }
-    
