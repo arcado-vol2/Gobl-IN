@@ -119,10 +119,10 @@ public class character_auto_controller : MonoBehaviour
 
             float vertical_input = Input.GetAxis("Vertical");
             float horizontal_input = Input.GetAxis("Horizontal");
-            SaveAction(DemoActionType.move, true, last_vertical_input, last_horizontal_input);
+            
             if ((vertical_input != 0 || horizontal_input != 0) && (vertical_input != last_vertical_input || horizontal_input != last_horizontal_input))
             {
-
+                SaveAction(DemoActionType.move, true, last_vertical_input, last_horizontal_input);
             }
 
             last_vertical_input = vertical_input;
